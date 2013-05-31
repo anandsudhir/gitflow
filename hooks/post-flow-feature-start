@@ -1,0 +1,20 @@
+#!/bin/sh
+#
+# Ran after git flow feature start
+#
+
+NAME=$1
+ORIGIN=$2
+BRANCH=$3
+BASE=$4
+
+BRANCH_VERSION=$(echo $BRANCH | tr "/" "-")
+echo ${BRANCH_VERSION}-SNAPSHOT
+
+if [ -f pom.xml ]
+then
+	mvn versions:set -DnewVersion=${BRANCH_VERSION}-SNAPSHOT -DgenerateBackupPoms=false
+	git commit -am "Setting version to ${BRANCH_VERSION}-SNAPSHOT"
+fi
+
+exit 0
