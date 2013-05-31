@@ -52,7 +52,7 @@ usage() {
 	echo "       git flow feature diff [<name|nameprefix>]"
 	echo "       git flow feature rebase [-i] [<name|nameprefix>]"
 	echo "       git flow feature checkout [<name|nameprefix>]"
-	echo "       git flow feature pull [-r] <remote> [<name>]"
+		echo "       git flow feature pull [-r] <remote> [<name>]"
 }
 
 cmd_default() {
@@ -213,10 +213,14 @@ cmd_start() {
 		require_branches_equal "$DEVELOP_BRANCH" "$ORIGIN/$DEVELOP_BRANCH"
 	fi
 
+	run_pre_hook "$NAME" "$ORIGIN" "$BRANCH" "$BASE"
+
 	# create branch
 	if ! git_do checkout -b "$BRANCH" "$BASE"; then
 		die "Could not create feature branch '$BRANCH'"
 	fi
+
+	run_post_hook "$NAME" "$ORIGIN" "$BRANCH" "$BASE"
 
 	echo
 	echo "Summary of actions:"
@@ -299,6 +303,8 @@ cmd_finish() {
 		require_branches_equal "$DEVELOP_BRANCH" "$ORIGIN/$DEVELOP_BRANCH"
 	fi
 
+    run_pre_hook "$NAME" "$ORIGIN" "$BRANCH"
+
 	# if the user wants to rebase, do that first
 	if flag rebase; then
 		if ! git flow feature rebase "$NAME" "$DEVELOP_BRANCH"; then
@@ -339,6 +345,8 @@ cmd_finish() {
 		echo
 		exit 1
 	fi
+
+    run_post_hook "$NAME" "$ORIGIN" "$BRANCH"
 
 	# when no merge conflict is detected, just clean up the feature branch
 	helper_finish_cleanup
@@ -386,6 +394,8 @@ cmd_publish() {
 	git_do fetch -q "$ORIGIN"
 	require_branch_absent "$ORIGIN/$BRANCH"
 
+	run_pre_hook "$NAME" "$ORIGIN" "$BRANCH"
+
 	# create remote branch
 	git_do push "$ORIGIN" "$BRANCH:refs/heads/$BRANCH"
 	git_do fetch -q "$ORIGIN"
@@ -394,6 +404,8 @@ cmd_publish() {
 	git_do config "branch.$BRANCH.remote" "$ORIGIN"
 	git_do config "branch.$BRANCH.merge" "refs/heads/$BRANCH"
 	git_do checkout "$BRANCH"
+
+	run_post_hook "$NAME" "$ORIGIN" "$BRANCH"
 
 	echo
 	echo "Summary of actions:"
@@ -410,11 +422,16 @@ cmd_track() {
 	# sanity checks
 	require_clean_working_tree
 	require_branch_absent "$BRANCH"
+
+	run_pre_hook "$NAME" "$ORIGIN" "$BRANCH"
+
 	git_do fetch -q "$ORIGIN"
 	require_branch "$ORIGIN/$BRANCH"
 
 	# create tracking branch
 	git_do checkout -b "$BRANCH" "$ORIGIN/$BRANCH"
+
+	run_post_hook "$NAME" "$ORIGIN" "$BRANCH"
 
 	echo
 	echo "Summary of actions:"
@@ -504,6 +521,8 @@ cmd_pull() {
 
 	require_clean_working_tree
 
+	run_pre_hook "$NAME" "$REMOTE" "$BRANCH"
+
 	if git_branch_exists "$BRANCH"; then
 		# Again, avoid accidental merges
 		avoid_accidental_cross_branch_action || die
@@ -527,4 +546,6 @@ cmd_pull() {
 		git_do checkout -q "$BRANCH" || die "Checking out new local branch failed."
 		echo "Created local branch $BRANCH based on $REMOTE's $BRANCH."
 	fi
+
+	run_post_hook "$NAME" "$REMOTE" "$BRANCH"
 }
