@@ -175,8 +175,12 @@ cmd_start() {
 		require_branches_equal "$MASTER_BRANCH" "$ORIGIN/$MASTER_BRANCH"
 	fi
 
+	run_pre_hook "$NAME" "$ORIGIN" "$BRANCH" "$BASE"
+
 	# create branch
 	git_do checkout -b "$BRANCH" "$BASE"
+
+	run_post_hook "$NAME" "$ORIGIN" "$BRANCH" "$BASE"
 
 	echo
 	echo "Summary of actions:"
@@ -202,6 +206,8 @@ cmd_publish() {
 	git_do fetch -q "$ORIGIN"
 	require_branch_absent "$ORIGIN/$BRANCH"
 
+	run_pre_hook "$NAME" "$ORIGIN" "$BRANCH"
+
 	# create remote branch
 	git_do push "$ORIGIN" "$BRANCH:refs/heads/$BRANCH"
 	git_do fetch -q "$ORIGIN"
@@ -210,6 +216,8 @@ cmd_publish() {
 	git config "branch.$BRANCH.remote" "$ORIGIN"
 	git config "branch.$BRANCH.merge" "refs/heads/$BRANCH"
 	git_do checkout "$BRANCH"
+
+	run_post_hook "$NAME" "$ORIGIN" "$BRANCH"
 
 	echo
 	echo "Summary of actions:"
@@ -229,8 +237,12 @@ cmd_track() {
 	git_do fetch -q "$ORIGIN"
 	require_branch "$ORIGIN/$BRANCH"
 
+	run_pre_hook "$NAME" "$ORIGIN" "$BRANCH"
+
 	# create tracking branch
 	git_do checkout -b "$BRANCH" "$ORIGIN/$BRANCH"
+
+	run_post_hook "$NAME" "$ORIGIN" "$BRANCH"
 
 	echo
 	echo "Summary of actions:"
@@ -272,6 +284,8 @@ cmd_finish() {
 		require_branches_equal "$DEVELOP_BRANCH" "$ORIGIN/$DEVELOP_BRANCH"
 	fi
 
+    run_pre_hook "$NAME" "$ORIGIN" "$BRANCH"
+
 	# try to merge into master
 	# in case a previous attempt to finish this release branch has failed,
 	# but the merge into master was successful, we skip it now
@@ -312,6 +326,8 @@ cmd_finish() {
 		  die "There were merge conflicts."
 		  # TODO: What do we do now?
 	fi
+
+    run_post_hook "$NAME" "$ORIGIN" "$BRANCH"
 
 	# delete branch
 	if noflag keep; then
