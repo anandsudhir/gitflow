@@ -1,0 +1,9 @@
+* text=auto
+.git* text=auto
+
+*.sh eol=lf
+*.bash eol=lf
+git-* eol=lf
+gitflow* eol=lf
+
+*.cmd eol=crlf
