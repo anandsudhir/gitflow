@@ -327,6 +327,13 @@ require_branches_equal() {
 }
 
 #
+# git hooks dir is required for running pre hook on "git flow init"
+#
+require_hooks_dir_configured() {
+  export HOOKS_DIR=$(git rev-parse --git-dir 2>/dev/null)/hooks
+}
+
+#
 # run_pre_hook
 #
 # Looks for a Git hook script called

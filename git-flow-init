@@ -66,6 +66,9 @@ cmd_default() {
 		exit 0
 	fi
 
+	require_hooks_dir_configured
+	run_pre_hook
+	
 	local branch_count
 	local answer
 
@@ -309,6 +312,7 @@ cmd_default() {
 		git_do config gitflow.prefix.versiontag "$prefix"
 	fi
 
+	run_post_hook
 
 	# TODO: what to do with origin?
 }
