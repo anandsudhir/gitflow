@@ -327,6 +327,29 @@ require_branches_equal() {
 }
 
 #
+# Changes start here
+#
+require_maven() {
+	if [ ! -f pom.xml ]; then
+		die "Not a maven project"
+	fi
+}
+
+require_jenkins_url() {
+	local jenkins_url=$(git config --get gitflow.jenkins.url)
+	if [ "$jenkins_url" != "" ]; then
+		die "Jenkins URL is not configured"
+	fi
+}
+
+require_jenkins_config() {
+	local jenkins_url=$(git config --get gitflow.jenkins.url)
+	if [ ! -f jenkinsconfig.xml ]; then
+		die "Cannot find Jenkins config xml"
+	fi
+}
+
+#
 # git hooks dir is required for running pre hook on "git flow init"
 #
 require_hooks_dir_configured() {

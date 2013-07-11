@@ -7,21 +7,27 @@ NAME=$1
 ORIGIN=$2
 BRANCH=$3
 
-BRANCH_VERSION=$(echo $BRANCH | tr "/" "-")
+#
+# Create a jenkins job
+#
+create_jenkins_job() {
+  require_jenkins_url
+  require_jenkins_config
+  require_maven
 
-JENKINS_URL="http://jenkins.server.org"
-JENKINS_PARAMS="/view/All/createItem?name="
+  local branch_version=$(echo $BRANCH | tr "/" "-")
+  local jenkins_url=$(git config --get gitflow.jenkins.url)
+  # local jenkins_params="/view/All/createItem?name="
 
-if [ -f pom.xml ]
-then
-	# Get the artifactId from pom.xml
-	ARTIFACT_ID=$(mvn help:evaluate -Dexpression=project.artifactId | grep -B 2 '\[INFO\] Reactor Summary' | sed -e '1q')
-	#curl -X GET ${JENKINS_URL}/job/${ARTIFACT_ID}-master/config.xml -o ${ARTIFACT_ID}.xml
+  local branch_full_name=$(git rev-parse --symbolic-full-name --abbrev-ref @{u})
+  local artifact_id=$(mvn help:evaluate -Dexpression=project.artifactId | grep -B 2 '\[INFO\] Reactor Summary' | sed -e '1q') # Get the artifactId from pom.xml
 
-	# echo URL: ${JENKINS_URL}${JENKINS_PARAMS}${ARTIFACT_ID}-${BRANCH_VERSION}
-	echo "Creating a Jenkins job for ${ARTIFACT_ID}-${BRANCH_VERSION}"
-	# Create Jenkins job
-	curl -X POST ${JENKINS_URL}${JENKINS_PARAMS}${ARTIFACT_ID}-${BRANCH_VERSION} --data-binary @jenkinsconfig.xml -H 'Content-Type: application/xml; charset=ISO-8859-1'
-fi
+  sed -ir "/<hudson.plugins.git.BranchSpec>/I{n; s,.*,<name>$branch_full_name</name>,}" jenkinsconfig.xml
+  # echo URL: ${jenkins_url}${jenkins_params}${artifact_id}-${branch_version}
+  echo "Creating a Jenkins job for ${artifact_id}-${branch_version}"
+  curl -X POST ${jenkins_url}${jenkins_params}${artifact_id}-${branch_version} --data-binary @jenkinsconfig.xml -H 'Content-Type: application/xml; charset=ISO-8859-1'
+}
+
+create_jenkins_job
 
 exit 0

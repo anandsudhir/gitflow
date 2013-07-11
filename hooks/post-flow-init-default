@@ -1,27 +1,54 @@
 #!/bin/sh
 #
-# Ran after git flow feature publish
+# Ran after git flow init
 #
 
-NAME=$1
-ORIGIN=$2
-BRANCH=$3
+#
+# Configure jenkins/hudson url
+#
+configure_jenkins_stuff() {
+	echo
+	echo "What is the URL to your Jenkins/Hudson server?"
 
-BRANCH_VERSION=$(echo $BRANCH | tr "/" "-")
+	default_suggestion=$(git config --get gitflow.jenkins.url 2>/dev/null)
 
-JENKINS_URL="http://jenkins.server.org"
-JENKINS_PARAMS="/view/All/createItem?name="
+	printf "Jenkins URL: [$default_suggestion]"
+	read answer
+	printf "\n"
+	[ "$answer" = "-" ] && jenkins_url= || jenkins_url=${answer:-$default_suggestion}
 
-if [ -f pom.xml ]
-then
-	# Get the artifactId from pom.xml
-	ARTIFACT_ID=$(mvn help:evaluate -Dexpression=project.artifactId | grep -B 2 '\[INFO\] Reactor Summary' | sed -e '1q')
-	#curl -X GET ${JENKINS_URL}/job/${ARTIFACT_ID}-master/config.xml -o ${ARTIFACT_ID}.xml
+	git_do config gitflow.jenkins.url "$jenkins_url"
 
-	# echo URL: ${JENKINS_URL}${JENKINS_PARAMS}${ARTIFACT_ID}-${BRANCH_VERSION}
-	echo "Creating a Jenkins job for ${ARTIFACT_ID}-${BRANCH_VERSION}"
-	# Create Jenkins job
-	curl -X POST ${JENKINS_URL}${JENKINS_PARAMS}${ARTIFACT_ID}-${BRANCH_VERSION} --data-binary @jenkinsconfig.xml -H 'Content-Type: application/xml; charset=ISO-8859-1'
-fi
+	get_jenkins_config
+}
+
+#
+# Get jenkins configuration from the master branch
+# At the moment, we assume that a jenkins with the name ${artifact_id}-master/ is already present
+# TODO Implement a fallback. Perhaps use a combination of the project and the branch names?
+#
+get_jenkins_config() {
+	require_maven
+	require_jenkins_url
+
+	local artifact_id=$(mvn help:evaluate -Dexpression=project.artifactId | grep -B 2 '\[INFO\] Reactor Summary' | sed -e '1q')
+  curl -X GET ${jenkins_url}/job/${artifact_id}-master/config.xml -o jenkinsconfig.xml
+}
+
+#
+# Create a jenkins job for the master branch (using a default configuration)
+# Incomplete and unused at the moment
+# TODO Implement this feature!
+#
+create_jenkins_job_for_master() {
+	require_maven
+	require_jenkins_url
+
+	local jenkins_url=$(git config --get gitflow.jenkins.url)
+	echo "Creating a Jenkins job for ${artifact_id}-${branch_version}"
+	curl -X POST ${jenkins_url}${jenkins_params}${artifact_id}-${branch_version} --data-binary @jenkinsconfig.xml -H 'Content-Type: application/xml; charset=ISO-8859-1'
+}
+
+configure_jenkins_stuff
 
 exit 0

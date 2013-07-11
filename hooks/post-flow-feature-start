@@ -8,13 +8,14 @@ ORIGIN=$2
 BRANCH=$3
 BASE=$4
 
-BRANCH_VERSION=$(echo $BRANCH | tr "/" "-")
-echo ${BRANCH_VERSION}-SNAPSHOT
+set_maven_version() {
+  require_maven
 
-if [ -f pom.xml ]
-then
-	mvn versions:set -DnewVersion=${BRANCH_VERSION}-SNAPSHOT -DgenerateBackupPoms=false
-	git commit -am "Setting version to ${BRANCH_VERSION}-SNAPSHOT"
-fi
+  local branch_version=$(echo $BRANCH | tr "/" "-")
+
+  echo "Setting version to ${branch_version}-SNAPSHOT"
+  mvn versions:set -DnewVersion=${BRANCH_VERSION}-SNAPSHOT -DgenerateBackupPoms=false
+  git commit -am "Setting version to ${BRANCH_VERSION}-SNAPSHOT"
+}
 
 exit 0
